@@ -18,14 +18,13 @@ let getGameIdParser =
 
 let colorAndNumberParser =
     let inner input =
-        let parser = manyDigit .>>. whitespace .>>. anyOfString [ "blue"; "green"; "red" ]
+        let parser = (manyDigit .>> whitespace) .>>. anyOfString [ "blue"; "green"; "red" ]
 
         let result = run parser input
 
         match result with
         | Failure msg -> Failure msg
-        | Success(((number, _whitespace), charList), remaining) ->
-            let str = charList
+        | Success((number, str), remaining) ->
 
             match str with
             | "blue" -> Success(Blue number, remaining)
@@ -37,8 +36,8 @@ let colorAndNumberParser =
 
 // One draw: 3 green, 4 blue, 1 red
 let manyColorsAndNumberParse =
-    colorAndNumberParser .>>. many (pstring ", " .>>. colorAndNumberParser)
-    |>> fun (firstColor, rest) -> firstColor :: (List.map snd rest)
+    colorAndNumberParser .>>. many (pstring ", " >>. colorAndNumberParser)
+    |>> fun (firstColor, rest) -> firstColor :: rest
 
 let gameOfParseResult ((gameId, firstDraw: Draw), otherDraw: Draw list) =
     Game
