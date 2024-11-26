@@ -1,50 +1,68 @@
 ﻿open System.IO
-open System
-open Microsoft.FSharp.Core
 
-let resultFromThrowable f a =
-    try
-        Ok(f (a))
-    with ex ->
-        Error ex
 
-let readFile (filePath: string) =
-    resultFromThrowable File.ReadAllLines filePath
+let words =
+    [ "one"
+      "two"
+      "three"
+      "four"
+      "five"
+      "six"
+      "seven"
+      "eight"
+      "nine"
+      "ten"
+      "1"
+      "2"
+      "3"
+      "4"
+      "5"
+      "6"
+      "7"
+      "8"
+      "9" ]
 
-let lines = (readFile "./input.txt")
+let rec getFirstDigit (str: string) =
+    if str.Length = 0 then
+        None
+    else
+        match words |> List.tryFind (fun w -> str.StartsWith w) with
+        | Some w -> Some w
+        | None -> getFirstDigit str.[1..]
 
-let getCallibrationFromString (str: string) =
-    let first = Seq.tryFind Char.IsDigit str
-    let last = Seq.tryFindBack Char.IsDigit str
+let rec getLastDigit (str: string) =
+    if str.Length = 0 then
+        None
+    else
+        match words |> List.tryFind (fun w -> str.EndsWith w) with
+        | Some w -> Some w
+        | None -> getLastDigit str.[..^1]
 
-    match first, last with
-    | Some first, Some last -> Some(first, last)
+let wordToValue = function
+    | "one" | "1" -> 1
+    | "two" | "2" -> 2
+    | "three" | "3" -> 3
+    | "four" | "4" -> 4
+    | "five" | "5" -> 5
+    | "six" | "6" -> 6
+    | "seven" | "7" -> 7
+    | "eight" | "8" -> 8
+    | "nine" | "9" -> 9
+    | _ -> 0
+
+let getCallibration (str: string) =
+    let firstDigit = getFirstDigit str
+    let lastDigit = getLastDigit str
+    match firstDigit, lastDigit with
+    | Some f, Some l -> Some (f, l)
     | _ -> None
 
-let processLines lines =
+let () =
+    let lines = File.ReadAllLines "input.txt"
+
     lines
-    |> Seq.map getCallibrationFromString
-    |> Seq.map (function
-        | Some(a, b) -> string a + string b
-        | None -> "0")
-    |> Seq.map (fun s ->
-        match System.Int32.TryParse(s) with
-        | (true, v) -> v
-        | _ -> 0)
+    |> Seq.map getCallibration
+    |> Seq.choose id
+    |> Seq.map (fun (f, l) -> (wordToValue f) * 10 + wordToValue l)
     |> Seq.sum
-
-
-let result =
-    result {
-        let! lines = readFile "input.txt"
-        return processLines lines
-    }
-
-
-let example = "treb7uchet"
-
-match result with
-| Ok result -> printfn "%d" result
-| Error ex -> printfn "Error: %s" ex.Message
-
-printfn "%d" (processLines [ example ])
+    |> printf "%d\n"
