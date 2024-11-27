@@ -72,27 +72,39 @@ let rec iterateGrid (inputGrid: char array2d) (position: int) (acc: Acc) (sum: i
 
     if position >= (width * height) then
         sum
-    else if not (isNumber inputGrid.[x, y]) && acc <> startAcc then // end of a number (last was a number and not current)
-        // flush acc
-        let newSum =
-            match acc with
-            | NextToASymbol s -> sum + int s
-            | NotNextToASymbol _ -> sum
 
-        printfn "%A" acc
-
-        iterateGrid inputGrid (position + 1) startAcc newSum
     else if (isNumber inputGrid.[x, y]) then
+
+        // end of number if it's the last element of a row or if next is not a number
+        let isEndOfNumber x y =
+            y = width - 1 || not (isNumber inputGrid.[x, y + 1])
+
         // check if next is a number
         let currentIsNextToASymbol = isNextToSymbol x y inputGrid
 
-        let current =
+        let currentAcc =
             if currentIsNextToASymbol then
-                NextToASymbol(string inputGrid.[x, y])
+                addAcc acc (NextToASymbol(string inputGrid.[x, y]))
             else
-                NotNextToASymbol(string inputGrid.[x, y])
+                addAcc acc (NotNextToASymbol(string inputGrid.[x, y]))
 
-        iterateGrid inputGrid (position + 1) (addAcc acc current) sum
+        // if it's end of a number, just flush the acc
+        if isEndOfNumber x y then
+            let newSum =
+                match currentAcc with
+                | NextToASymbol s -> sum + int s
+                | NotNextToASymbol _ -> sum
+
+            printfn
+                "Flushing currentAcc: %s"
+                (match currentAcc with
+                 | NextToASymbol s -> s
+                 | NotNextToASymbol s -> s)
+
+            iterateGrid inputGrid (position + 1) startAcc newSum
+        else
+            iterateGrid inputGrid (position + 1) (currentAcc) sum
+
     else
         iterateGrid inputGrid (position + 1) startAcc sum
 
