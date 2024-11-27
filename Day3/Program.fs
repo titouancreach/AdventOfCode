@@ -26,14 +26,14 @@ type Acc =
 
 let startAcc = NotNextToASymbol ""
 
-let lift op a b =
+let lift2 op a b =
     match a, b with
     | NotNextToASymbol a, NotNextToASymbol b -> NotNextToASymbol(op a b)
     | NotNextToASymbol a, NextToASymbol b -> NextToASymbol(op a b)
     | NextToASymbol a, NotNextToASymbol b -> NextToASymbol(op a b)
     | NextToASymbol a, NextToASymbol b -> NextToASymbol(op a b)
 
-let addAcc = lift (+)
+let addAcc = lift2 (+)
 let width = Array2D.length1 inputGrid
 let height = Array2D.length2 inputGrid
 
