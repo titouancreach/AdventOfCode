@@ -71,6 +71,39 @@ let idIfGameValid (game: Game) =
 
 let lines = System.IO.File.ReadAllLines "input.txt"
 
+let getMaxRedAndMaxBlueAndMaxGreen (game: Game) =
+    let (Game g) = game
+
+    let maxRed =
+        g.Draws
+        |> List.collect id
+        |> List.map (function
+            | Red n -> Some(n)
+            | _ -> None)
+        |> List.choose id
+        |> List.max
+
+    let maxBlue =
+        g.Draws
+        |> List.collect id
+        |> List.map (function
+            | Blue n -> Some(n)
+            | _ -> None)
+        |> List.choose id
+        |> List.max
+
+    let maxGreen =
+        g.Draws
+        |> List.collect id
+        |> List.map (function
+            | Green n -> Some(n)
+            | _ -> None)
+        |> List.choose id
+        |> List.max
+
+    maxRed * maxBlue * maxGreen
+
+
 let result =
     lines
     |> Array.map (fun line -> run lineParser line)
@@ -79,7 +112,10 @@ let result =
         | a ->
             printf "Invalid line: %A\n" a
             None)
-    |> Array.choose idIfGameValid
-    |> Array.sum
 
-printfn "%A" result
+let resultFirstPart = result |> Array.choose idIfGameValid |> Array.sum
+
+let resultSndPart = result |> Array.map getMaxRedAndMaxBlueAndMaxGreen |> Array.sum
+
+printfn "%A" resultFirstPart
+printfn "%A" resultSndPart
