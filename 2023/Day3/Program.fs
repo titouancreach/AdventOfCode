@@ -79,7 +79,7 @@ let rec iterateGrid (inputGrid: char array2d) (position: int) (acc: Acc) (sum: i
         let isEndOfNumber x y =
             y = width - 1 || not (isNumber inputGrid.[x, y + 1])
 
-        // check if next is a number
+        // check if the current element is next to a symbol
         let currentIsNextToASymbol = isNextToSymbol x y inputGrid
 
         let currentAcc =
