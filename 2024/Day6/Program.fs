@@ -76,13 +76,13 @@ let rec getNextPosition (map: Map) (guardPosition: Position) : Position option =
     let charAtNextPosition = tryGetCharAt map nextX nextY
 
     match charAtNextPosition with
-    | Some('#') -> // wall
+    | Some('#' | 'O') -> // wall
         getNextPosition
             map
             { guardPosition with
                 Direction = getNextDirection guardPosition.Direction }
 
-    | Some(c) -> // free position
+    | Some _ -> // free position
         Some
             { guardPosition with
                 X = nextX
@@ -90,30 +90,75 @@ let rec getNextPosition (map: Map) (guardPosition: Position) : Position option =
 
     | _ -> None
 
-let result =
+
+let getPositionSeq (map: Map) (initialPosition: Position) =
+    seq {
+        yield initialPosition
+
+        yield!
+            Seq.unfold
+                (fun currentPosition ->
+                    match getNextPosition map currentPosition with
+                    | Some nextPosition -> Some(nextPosition, nextPosition)
+                    | None -> None)
+                initialPosition
+    }
+
+
+let part1 =
     let map = parseMap puzzleInput in
     let initialPosition = getInitialPosition map
-
-    let positionSeq =
-        seq {
-            yield initialPosition
-
-            yield!
-                Seq.unfold
-                    (fun currentPosition ->
-                        match getNextPosition map currentPosition with
-                        | Some(nextPosition) -> Some(nextPosition, nextPosition)
-                        | None -> None)
-                    initialPosition
-        }
-
-    printfn "Initial position: x: %d, y: %d" initialPosition.X initialPosition.Y
-
-    for position in positionSeq do
-        printfn "x: %d, y: %d" position.X position.Y
+    let positionSeq = getPositionSeq map initialPosition
 
     // count distincts pairs of position
     let count =
         positionSeq |> Seq.map (fun x -> (x.X, x.Y)) |> Seq.distinct |> Seq.length
 
     printfn "count: %d" count
+
+
+let isCyclic positionSeq =
+    let seen = System.Collections.Generic.HashSet<Position>()
+
+    positionSeq
+    |> Seq.exists (fun pos ->
+        if seen.Contains(pos) then
+            true
+        else
+            seen.Add(pos) |> ignore
+            false)
+
+let part2 =
+    let map = parseMap puzzleInput
+    let initialPosition = getInitialPosition map
+
+    // bruteforce like there is no tomorrow
+    let checkForLoop x y map initialPosition =
+        if map.Matrix.[y, x] = '.' then
+            map.Matrix.[y, x] <- 'O'
+
+            let positionSeq = (getPositionSeq map initialPosition) |> Seq.truncate 10000 //// lol
+            let cyclic = isCyclic positionSeq
+
+            if cyclic then
+                printfn "x: %d, y: %d, cyclic: %b" x y cyclic
+
+            map.Matrix.[y, x] <- '.'
+
+            (x, y, cyclic)
+        else
+            (x, y, false) // No need to check if it's not a '.'
+
+    let tasks =
+        [ for y in 0 .. map.Height - 1 do
+              for x in 0 .. map.Width - 1 do
+                  yield checkForLoop x y map initialPosition ]
+
+    let results = tasks |> List.toArray
+
+    let count =
+        results
+        |> Array.distinct
+        |> Array.sumBy (fun (x, y, cyclic) -> if cyclic then 1 else 0)
+
+    printfn "Total cyclic count: %d" count
