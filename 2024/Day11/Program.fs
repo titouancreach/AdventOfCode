@@ -1,59 +1,50 @@
 ﻿open System.Collections.Generic
+
 type Stone = Stone of bigint
 
-let ex1 = "125 17" |> _.Split(" ") |> Array.map (bigint.Parse >> Stone)
+let counter (stones: bigint seq) : IDictionary<Stone, bigint> =
+    stones
+    |> Seq.map Stone
+    |> Seq.groupBy id
+    |> Seq.map (fun (stone, group) -> stone, bigint (Seq.length group))
+    |> dict
 
-let puzzle =
-    "0 7 198844 5687836 58 2478 25475 894"
-    |> _.Split(" ")
-    |> Array.map (bigint.Parse >> Stone)
+let nextStep (stone: Stone) : Stone list =
+    match stone with
+    | Stone n when n = 0I -> [ Stone 1I ]
+    | Stone n ->
+        let digits = n.ToString()
+        let len = digits.Length
+        let half = len / 2
+        let remainder = len % 2
 
-let memoize f =
-    let dict = Dictionary<_, _>()
+        if remainder = 0 then
+            [ Stone(bigint.Parse digits.[.. half - 1])
+              Stone(bigint.Parse digits.[half..]) ]
+        else
+            [ Stone(n * 2024I) ]
 
-    fun c ->
-        let exist, value = dict.TryGetValue c
+let part2 (puzzleInput: string) =
+    let stones = puzzleInput.Split() |> Seq.map bigint.Parse |> counter
+    let mutable stonesDict = stones
 
-        match exist with
-        | true -> value
-        | _ ->
-            let value = f c
-            dict.Add(c, value)
-            value
+    for _ in 1..75 do
+        let newStones = Dictionary<Stone, bigint>()
 
-let hasEvenDigits (n: bigint) =
-    let rec countDigits n count =
-        if n = 0I then count else countDigits (n / 10I) (count + 1)
+        for kvp in stonesDict do
+            let stone, count = kvp.Key, kvp.Value
 
-    (countDigits n 0) % 2 = 0
+            for child in nextStep stone do
+                if newStones.ContainsKey child then
+                    newStones.[child] <- newStones.[child] + count
+                else
+                    newStones.[child] <- count
 
-let splitInHalf (n: bigint) =
-    let str = string n
-    let half = str.Length / 2
-    str.Substring(0, half), str.Substring(half)
+        stonesDict <- newStones
 
+    // Return the sum of all counts
+    stonesDict.Values |> Seq.sum
 
-let blink =
-    function
-    | Stone n when n = 0I -> [| Stone 1I |]
-    | Stone n when hasEvenDigits n ->
-        let halfs = splitInHalf n
-        [| Stone(bigint.Parse(fst halfs)); Stone(bigint.Parse(snd halfs)) |]
-    | Stone n -> [| Stone(n * bigint 2024) |]
-
-
-let mutable count = 0
-
-let memoizedBlink = memoize blink
-
-let blinks =
-    let generateSeq =
-        Seq.unfold (fun sequence ->
-            printfn "Calculating sequence number %d" (count)
-            count <- count + 1
-            let newSeq = Array.collect memoizedBlink sequence
-            Some(sequence, Array.collect memoizedBlink sequence))
-
-    generateSeq (puzzle) |> Seq.take 76 // nb of blink if (+ 1) becasue the first state is part of the sequence, so for 6 blinks, we need to take 7
-
-(blinks |> Seq.toList |> List.rev |> List.head |> Array.length |> printfn "%d")
+// Example usage
+let input = "0 7 198844 5687836 58 2478 25475 894"
+printfn "%A" (part2 input)
