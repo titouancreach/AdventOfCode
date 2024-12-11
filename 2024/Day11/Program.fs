@@ -42,9 +42,7 @@ let part2 (puzzleInput: string) =
 
         stonesDict <- newStones
 
-    // Return the sum of all counts
     stonesDict.Values |> Seq.sum
 
-// Example usage
 let input = "0 7 198844 5687836 58 2478 25475 894"
 printfn "%A" (part2 input)
